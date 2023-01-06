@@ -7,28 +7,72 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 public class Main {
-    static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-AAAA");
+    // Creating a date-time formatter
+    static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-AA");
+    // Creating a variable for code at the end of link
+    static StringBuilder code = new StringBuilder();
+    // Creating just a simple final link
+    static final String url = "https://prnt.sc/";
+    // Creating a final variable of all digits and numbers
+    static final String alphabet = "abcdefghijklmnopqrstuvwxyz1234567890";
+    // Creating a Random type object
+    static final Random r = new Random();
+    // List of links which are contains useful photos
+    static final List<String> banned = List.of(
+            "https://i.imgur.com/819oVqT.jpg",
+            "https://i.imgur.com/iXKeBIy.png",
+            "https://i.imgur.com/HPMommG.jpg",
+            "https://i.imgur.com/5PS14nh.jpg"
+    );
+
     public static void main(String[] args) {
-        Random r = new Random();
-        String alphabet = "abcdefghijklmnopqrstuvwxyz1234567890";
+        // Main code executes in infinite loop
         while (true){
-            StringBuilder url = new StringBuilder("https://prnt.sc/");
+            // Recreate variable for code
+            code = new StringBuilder();
+            
+            // Generating 6 random chars
             for (int i = 0; i < 6; i++) {
-                url.append(alphabet.charAt(r.nextInt(alphabet.length())));
+                code.append(alphabet.charAt(r.nextInt(alphabet.length())));
             }
+            
+            // Some code throws exceptions, so it needs to be caught
             try{
-                Document document = Jsoup.connect(url.toString()).get();
+                
+                // Creating an object with type Document to get exact element from page
+                Document document = Jsoup.connect(url + code.toString()).get();
+                // Get img element from HTML page
                 Element el = document.getElementsByClass("screenshot-image").get(0);
-                downloadImage(el.attr("src"));
+                
+                // Download image from link, if it's not in list of banned image links
+                if (!banned.contains(el.attr("src")))
+                    downloadImage(el.attr("src"));
+                else throw (new IOException());
+                
+                // If everything is fine, log it
                 System.out.print("✓");
-            } catch (IOException | URISyntaxException | IndexOutOfBoundsException e){
-                System.out.print("×");
-            }
-            try{
+                // Wait some time between downloads to avoid blocking IP
                 Thread.sleep(2000);
+                
+            } catch (URISyntaxException | IndexOutOfBoundsException e){
+                // If something wrong, log it
+                System.out.print("×");
+                try{
+                    Thread.sleep(500);
+                } catch (InterruptedException ignored){}
+                
+            } catch (IOException e){
+                // If caught banned image, make B output
+                System.out.print("B");
+            } catch (InterruptedException ignored){}
+            
+            try{
+                Thread.sleep(500);
             } catch (InterruptedException ignored){}
         }
     }
@@ -45,11 +89,8 @@ public class Main {
         in.close();
         byte[] response = out.toByteArray();
         LocalDateTime now = LocalDateTime.now();
-        FileOutputStream fos = new FileOutputStream(formatter.format(now) + ".png");
+        FileOutputStream fos = new FileOutputStream(formatter.format(now) + "_" + code + ".png");
         fos.write(response);
         fos.close();
-    }
-    public static String getPath() throws URISyntaxException {
-        return new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getPath();
     }
 }
